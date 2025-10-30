@@ -2,3 +2,18 @@
 #   example in the dev set.
 # Hint: Make use of existing code.
 # Your solution here should only be a few lines.
+
+import utils
+
+# Read the dev set and count the number of examples
+with open('birth_dev.tsv', encoding='utf-8') as f:
+    num_examples = len(f.readlines())
+
+# Create predictions that are all "London"
+predictions = ["London"] * num_examples
+
+# Evaluate the accuracy of this baseline
+total, correct = utils.evaluate_places('birth_dev.tsv', predictions)
+
+# Print the accuracy
+print('Correct: {} out of {}: {}%'.format(correct, total, correct/total*100))

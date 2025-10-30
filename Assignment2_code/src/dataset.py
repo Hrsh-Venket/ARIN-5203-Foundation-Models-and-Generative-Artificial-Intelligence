@@ -167,8 +167,54 @@ class CharCorruptionDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # TODO [part e]: see spec above
-        raise NotImplementedError
+        # [part e]: Implement span corruption
+        # Step 0: Retrieve document at index idx
+        document = self.data[idx]
+
+        # Step 1: Randomly truncate to length between 4 and int(block_size * 7/8)
+        max_len = int(self.block_size * 7 / 8)
+        min_len = 4
+
+        # Handle documents shorter than min_len
+        if len(document) < min_len:
+            truncated_len = len(document)
+        else:
+            truncated_len = random.randint(min_len, min(max_len, len(document)))
+
+        document = document[:truncated_len]
+
+        # Step 2: Split into prefix, masked_content, suffix
+        # masked_content length should average 1/4 of truncated doc
+        if truncated_len > 1:
+            max_masked_len = max(1, truncated_len // 2)  # Will average to ~1/4
+            masked_len = random.randint(1, max_masked_len)
+            mask_start = random.randint(0, truncated_len - masked_len)
+
+            prefix = document[:mask_start]
+            masked_content = document[mask_start:mask_start + masked_len]
+            suffix = document[mask_start + masked_len:]
+        else:
+            # Edge case: very short document
+            prefix = ""
+            masked_content = document
+            suffix = ""
+
+        # Step 3: Rearrange to [prefix] MASK_CHAR [suffix] MASK_CHAR [masked_content] [pads]
+        masked_string = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content
+
+        # Add padding to make it block_size length
+        num_pads = self.block_size - len(masked_string)
+        masked_string = masked_string + self.PAD_CHAR * num_pads
+
+        # Step 4: Create input and output (shift by one for next-char prediction)
+        x = masked_string[:-1]
+        y = masked_string[1:]
+
+        # Step 5: Encode using the vocabulary
+        x = torch.tensor([self.stoi[c] for c in x], dtype=torch.long)
+        y = torch.tensor([self.stoi[c] for c in y], dtype=torch.long)
+
+        return x, y
 
 """
 Code under here is strictly for your debugging purposes; feel free to modify
