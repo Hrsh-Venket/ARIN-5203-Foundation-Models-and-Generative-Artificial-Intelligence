@@ -90,7 +90,18 @@ class DownProjectBlock(nn.Module):
         super().__init__()
         ### YOUR CODE HERE
         ### Hint: Copy over the code from Block and make necessary modifications.
-        pass
+        self.ln1 = nn.LayerNorm(config.n_embd)
+        self.ln2 = nn.LayerNorm(config.n_embd)
+        self.attn = attention.CausalCrossAttention(config)
+        self.mlp = nn.Sequential(
+            nn.Linear(config.n_embd, 4 * config.n_embd),
+            nn.GELU(),
+            nn.Linear(4 * config.n_embd, config.n_embd),
+            nn.Dropout(config.resid_pdrop),
+        )
+        # Initialize learnable basis C with shape (1, bottleneck_dim, n_embd)
+        self.C = nn.Parameter(torch.zeros(1, config.bottleneck_dim, config.n_embd))
+        nn.init.xavier_uniform_(self.C)
         ### END YOUR CODE
 
     def forward(self, x_input):
@@ -100,7 +111,10 @@ class DownProjectBlock(nn.Module):
         ### YOUR CODE HERE
         ### Hint: Copy over the code from Block and make necessary modifications.
         ### Should be around 3-5 lines.
-        pass
+        # Cross-attention: x_input provides keys/values, self.C provides query
+        y = self.C + self.attn(x_input, self.ln1(self.C))
+        y = y + self.mlp(self.ln2(y))
+        return y
         ### END YOUR CODE
     
     
@@ -115,18 +129,29 @@ class UpProjectBlock(nn.Module):
         super().__init__()
         ### YOUR CODE HERE
         ### Hint: Copy over the code from Block and make necessary modifications.
-        pass
+        self.ln1 = nn.LayerNorm(config.n_embd)
+        self.ln2 = nn.LayerNorm(config.n_embd)
+        self.attn = attention.CausalCrossAttention(config)
+        self.mlp = nn.Sequential(
+            nn.Linear(config.n_embd, 4 * config.n_embd),
+            nn.GELU(),
+            nn.Linear(4 * config.n_embd, config.n_embd),
+            nn.Dropout(config.resid_pdrop),
+        )
         ### END YOUR CODE
-    
+
     def forward(self, y, x_input):
         """Hint: perform cross-attention between previous layer's output y and
-        x_input. 
+        x_input.
         Use the layernorm layers on y, and then on the input to the MLP.
         """
         ### YOUR CODE HERE
         ### Hint: Copy over the code from Block and make necessary modifications.
         ### Should be around 3-5 lines.
-        pass
+        # Cross-attention: x_input provides keys/values, y provides query
+        y = y + self.attn(x_input, self.ln1(y))
+        y = y + self.mlp(self.ln2(y))
+        return y
         ### END YOUR CODE
     
 
