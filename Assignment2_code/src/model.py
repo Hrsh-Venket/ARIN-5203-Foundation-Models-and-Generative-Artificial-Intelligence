@@ -148,10 +148,11 @@ class UpProjectBlock(nn.Module):
         ### YOUR CODE HERE
         ### Hint: Copy over the code from Block and make necessary modifications.
         ### Should be around 3-5 lines.
-        # Cross-attention: x_input provides keys/values, y provides query
-        y = y + self.attn(x_input, self.ln1(y))
-        y = y + self.mlp(self.ln2(y))
-        return y
+        # Apply layernorm to y (keys/values), x_input is query
+        # x_input as query ensures output projects back to original sequence length
+        x_out = x_input + self.attn(self.ln1(y), x_input)
+        x_out = x_out + self.mlp(self.ln2(x_out))
+        return x_out
         ### END YOUR CODE
     
 
