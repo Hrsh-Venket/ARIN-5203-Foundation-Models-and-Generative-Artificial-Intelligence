@@ -30,7 +30,7 @@ class UpSampleConv2D(torch.jit.ScriptModule):
         # Repeat x channel-wise upscale_factor^2 times
         x = x.repeat(1, int(self.upscale_factor ** 2), 1, 1)
         # Use PixelShuffle to rearrange dimensions
-        x = F.pixel_shuffle(x, self.upscale_factor)
+        x = F.pixel_shuffle(x, int(self.upscale_factor))
         # Apply convolution
         x = self.conv(x)
         return x
@@ -62,7 +62,7 @@ class DownSampleConv2D(torch.jit.ScriptModule):
         # and return the output
         ##################################################################
         # Use PixelUnshuffle to rearrange spatial dimensions to channels
-        x = F.pixel_unshuffle(x, self.downscale_ratio)
+        x = F.pixel_unshuffle(x, int(self.downscale_ratio))
         # Split channel-wise and reshape
         batch_size, channels, height, width = x.shape
         n_channels = channels // int(self.downscale_ratio ** 2)
@@ -321,7 +321,7 @@ class Generator(torch.jit.ScriptModule):
         # network.
         ##################################################################
         # Generate n_samples latent vectors from standard normal distribution
-        z = torch.randn(n_samples, 128).cuda()
+        z = torch.randn(n_samples, 128, device=next(self.parameters()).device)
         # Forward through the network
         return self.forward_given_samples(z)
         ##################################################################

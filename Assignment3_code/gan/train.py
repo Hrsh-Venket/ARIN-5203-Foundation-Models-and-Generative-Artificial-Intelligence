@@ -29,10 +29,10 @@ def get_optimizers_and_schedulers(gen, disc):
     # 100K iterations.
     ##################################################################
     scheduler_discriminator = torch.optim.lr_scheduler.LambdaLR(
-        optim_discriminator, lambda iter: 1 - iter / 500000
+        optim_discriminator, lambda iter: max(0.0, 1 - iter / 500000)
     )
     scheduler_generator = torch.optim.lr_scheduler.LambdaLR(
-        optim_generator, lambda iter: 1 - iter / 100000
+        optim_generator, lambda iter: max(0.0, 1 - iter / 100000)
     )
     ##################################################################
     #                          END OF YOUR CODE                      #
@@ -113,7 +113,7 @@ def train_model(
                 fake_samples = gen(train_batch.shape[0])
                 # Compute discriminator outputs
                 discrim_real = disc(train_batch)
-                discrim_fake = disc(fake_samples)
+                discrim_fake = disc(fake_samples.detach())
                 ##################################################################
                 #                          END OF YOUR CODE                      #
                 ##################################################################
@@ -122,8 +122,13 @@ def train_model(
                 # TODO 1.5 Compute the interpolated batch and run the
                 # discriminator on it.
                 ###################################################################
-                interp = None
-                discrim_interp = None
+                # Create random interpolation weights
+                alpha = torch.rand(train_batch.shape[0], 1, 1, 1).cuda()
+                # Interpolate between real and fake samples
+                interp = alpha * train_batch + (1 - alpha) * fake_samples.detach()
+                interp.requires_grad_(True)
+                # Run discriminator on interpolated batch
+                discrim_interp = disc(interp)
                 ##################################################################
                 #                          END OF YOUR CODE                      #
                 ##################################################################
