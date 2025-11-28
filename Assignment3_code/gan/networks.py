@@ -28,7 +28,7 @@ class UpSampleConv2D(torch.jit.ScriptModule):
         # 3. Apply convolution and return output
         ##################################################################
         # Repeat x channel-wise upscale_factor^2 times
-        x = x.repeat(1, self.upscale_factor ** 2, 1, 1)
+        x = x.repeat(1, int(self.upscale_factor ** 2), 1, 1)
         # Use PixelShuffle to rearrange dimensions
         x = F.pixel_shuffle(x, self.upscale_factor)
         # Apply convolution
@@ -65,8 +65,8 @@ class DownSampleConv2D(torch.jit.ScriptModule):
         x = F.pixel_unshuffle(x, self.downscale_ratio)
         # Split channel-wise and reshape
         batch_size, channels, height, width = x.shape
-        n_channels = channels // (self.downscale_ratio ** 2)
-        x = x.view(batch_size, self.downscale_ratio ** 2, n_channels, height, width)
+        n_channels = channels // int(self.downscale_ratio ** 2)
+        x = x.view(batch_size, int(self.downscale_ratio ** 2), n_channels, height, width)
         x = x.permute(1, 0, 2, 3, 4)  # (downscale_ratio^2, batch, channel, height, width)
         # Take average across dimension 0
         x = x.mean(dim=0)
