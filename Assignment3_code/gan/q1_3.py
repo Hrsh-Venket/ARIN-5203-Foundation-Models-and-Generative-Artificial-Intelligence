@@ -20,8 +20,10 @@ def compute_discriminator_loss(
     # Original GAN discriminator loss:
     # L_D = -E[log(D(real))] - E[log(1 - D(fake))]
     # Using binary cross entropy: BCE(D(real), 1) + BCE(D(fake), 0)
+    # Use one-sided label smoothing: real labels = 0.9 instead of 1.0
+    # This prevents discriminator from becoming overconfident
     loss_real = F.binary_cross_entropy_with_logits(
-        discrim_real, torch.ones_like(discrim_real)
+        discrim_real, torch.ones_like(discrim_real) * 0.9
     )
     loss_fake = F.binary_cross_entropy_with_logits(
         discrim_fake, torch.zeros_like(discrim_fake)
