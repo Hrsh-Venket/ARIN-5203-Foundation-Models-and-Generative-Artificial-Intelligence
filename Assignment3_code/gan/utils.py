@@ -43,7 +43,9 @@ def interpolate_latent_space(gen, path):
     import torchvision.utils
 
     # Create 100 latent vectors (10x10 grid)
-    z_samples = torch.zeros(100, 128, device=next(gen.parameters()).device)
+    # Get device from generator's dummy buffer
+    device = gen._dummy.device if hasattr(gen, '_dummy') else 'cuda'
+    z_samples = torch.zeros(100, 128, device=device)
 
     # Linearly interpolate the first two dimensions
     # First dimension varies across rows, second across columns

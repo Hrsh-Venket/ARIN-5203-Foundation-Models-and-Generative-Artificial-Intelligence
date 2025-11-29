@@ -280,6 +280,8 @@ class Generator(torch.jit.ScriptModule):
         # you have implemented previously above.
         ##################################################################
         self.starting_image_size = starting_image_size
+        # Register a buffer to track device (TorchScript compatible)
+        self.register_buffer('_dummy', torch.zeros(1))
         # Dense layer: 128 -> 128 * 4 * 4 = 2048
         self.dense = nn.Linear(128, 128 * starting_image_size * starting_image_size)
         # Layers: 3 ResBlockUp (4->8->16->32), then BatchNorm, ReLU, Conv, Tanh
@@ -321,7 +323,7 @@ class Generator(torch.jit.ScriptModule):
         # network.
         ##################################################################
         # Generate n_samples latent vectors from standard normal distribution
-        z = torch.randn(n_samples, 128, device=next(self.parameters()).device)
+        z = torch.randn(n_samples, 128, device=self._dummy.device)
         # Forward through the network
         return self.forward_given_samples(z)
         ##################################################################
